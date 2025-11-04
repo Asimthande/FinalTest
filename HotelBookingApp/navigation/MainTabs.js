@@ -1,11 +1,61 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 import ExploreScreen from '../screens/ExploreScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import HotelDetailsScreen from '../screens/HotelDetailsScreen';
+import BookingScreen from '../screens/BookingScreen';
+import DealsScreen from '../screens/DealsScreen';
 
 const Tab = createBottomTabNavigator();
+const ExploreStack = createNativeStackNavigator();
+const DealsStack = createNativeStackNavigator();
+
+function ExploreStackScreen() {
+  return (
+    <ExploreStack.Navigator>
+      <ExploreStack.Screen 
+        name="ExploreMain" 
+        component={ExploreScreen} 
+        options={{ title: 'Find Hotels' }}
+      />
+      <ExploreStack.Screen 
+        name="HotelDetails" 
+        component={HotelDetailsScreen} 
+        options={{ title: 'Hotel Details' }}
+      />
+      <ExploreStack.Screen 
+        name="Booking" 
+        component={BookingScreen} 
+        options={{ title: 'Book Your Stay' }}
+      />
+    </ExploreStack.Navigator>
+  );
+}
+
+function DealsStackScreen() {
+  return (
+    <DealsStack.Navigator>
+      <DealsStack.Screen 
+        name="DealsMain" 
+        component={DealsScreen} 
+        options={{ title: 'Recommended Hotels' }}
+      />
+      <DealsStack.Screen 
+        name="HotelDetails" 
+        component={HotelDetailsScreen} 
+        options={{ title: 'Hotel Details' }}
+      />
+      <DealsStack.Screen 
+        name="Booking" 
+        component={BookingScreen} 
+        options={{ title: 'Book Your Stay' }}
+      />
+    </DealsStack.Navigator>
+  );
+}
 
 export default function MainTabs() {
   return (
@@ -16,6 +66,8 @@ export default function MainTabs() {
 
           if (route.name === 'Explore') {
             iconName = focused ? 'search' : 'search-outline';
+          } else if (route.name === 'Deals') {
+            iconName = focused ? 'flash' : 'flash-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -39,8 +91,13 @@ export default function MainTabs() {
     >
       <Tab.Screen 
         name="Explore" 
-        component={ExploreScreen} 
-        options={{ title: 'Find Hotels' }}
+        component={ExploreStackScreen} 
+        options={{ headerShown: false }}
+      />
+      <Tab.Screen 
+        name="Deals" 
+        component={DealsStackScreen} 
+        options={{ headerShown: false }}
       />
       <Tab.Screen 
         name="Profile" 
