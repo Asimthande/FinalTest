@@ -16,6 +16,8 @@
 rad.json
 #Translation Base-file
 *.g.xlf
+
+firebaseConfig.js
 #License-file
 *.flf
 #Test results file
