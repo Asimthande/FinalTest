@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
+// Use onboarding images included in assets/Materials/01-Onboarding Page
 const onboardingData = [
   {
     id: '1',
-    title: 'Discover Hotels',
-    description: 'Find and book the best hotels around the world with ease',
-    icon: 'business',
+    title: 'Discover Amazing Hotels',
+    description: 'Find and book the best hotels around the world with just a few taps',
+    image: require('../assets/Materials/01-Onboarding Page/Onboarding 1.png'),
   },
   {
     id: '2',
-    title: 'Easy Booking',
-    description: 'Simple and secure booking process for your perfect stay',
-    icon: 'calendar',
+    title: 'Easy Booking Process',
+    description: 'Book your stay quickly with our simple and secure booking system',
+    image: require('../assets/Materials/01-Onboarding Page/Onboarding 2.png'),
   },
   {
     id: '3',
-    title: 'Guest Reviews',
-    description: 'Make informed decisions with authentic guest reviews',
-    icon: 'star',
+    title: 'Real Guest Reviews',
+    description: 'Make informed decisions with authentic reviews from other travelers',
+    image: require('../assets/Materials/01-Onboarding Page/Onboarding 3.png'),
   },
 ];
 
@@ -34,12 +35,14 @@ export default function OnboardingScreen() {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      navigation.replace('SignUp');
+      // FIXED: Navigate to SignIn instead of SignUp
+      navigation.replace('SignIn');
     }
   };
 
   const handleSkip = () => {
-    navigation.replace('SignUp');
+    // FIXED: Navigate to SignIn instead of SignUp
+    navigation.replace('SignIn');
   };
 
   return (
@@ -49,13 +52,11 @@ export default function OnboardingScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Ionicons 
-            name={onboardingData[currentIndex].icon} 
-            size={60} 
-            color="#1a237e" 
-          />
-        </View>
+        <Image 
+          source={onboardingData[currentIndex].image} 
+          style={styles.onboardingImage}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>{onboardingData[currentIndex].title}</Text>
         <Text style={styles.description}>{onboardingData[currentIndex].description}</Text>
       </View>
@@ -105,13 +106,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
+  onboardingImage: {
+    width: width * 0.8,
+    height: width * 0.8,
     marginBottom: 40,
   },
   title: {

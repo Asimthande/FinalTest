@@ -105,25 +105,32 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
+        <Ionicons name="person" size={50} color="#1a237e" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header Section */}
+      {/* HEADER WITH PROFILE ICON */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Ionicons name="person" size={40} color="#ffffff" />
+        <View style={styles.profileHeader}>
+          <Ionicons name="person-circle" size={80} color="#1a237e" style={styles.profileIcon} />
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+            <Text style={styles.userEmail}>{user?.email}</Text>
+            <Text style={styles.memberSince}>Member since 2024</Text>
+          </View>
         </View>
-        <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
       </View>
 
-      {/* Bookings Section */}
+      {/* BOOKINGS SECTION */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Bookings</Text>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="calendar" size={24} color="#1a237e" />
+          <Text style={styles.sectionTitle}>My Bookings</Text>
+        </View>
         {bookings.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="calendar-outline" size={50} color="#cccccc" />
@@ -164,7 +171,7 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      {/* Action Buttons */}
+      {/* ACTION BUTTONS */}
       <View style={styles.actions}>
         <TouchableOpacity 
           style={styles.editButton}
@@ -180,7 +187,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Edit Profile Modal */}
+      {/* EDIT PROFILE MODAL */}
       <Modal
         visible={showEditModal}
         animationType="slide"
@@ -189,6 +196,7 @@ export default function ProfileScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
+              <Ionicons name="person" size={24} color="#1a237e" />
               <Text style={styles.modalTitle}>Edit Profile</Text>
               <TouchableOpacity onPress={() => setShowEditModal(false)}>
                 <Ionicons name="close" size={24} color="#666666" />
@@ -204,6 +212,7 @@ export default function ProfileScreen() {
             />
             
             <TouchableOpacity style={styles.saveButton} onPress={handleUpdateProfile}>
+              <Ionicons name="checkmark" size={20} color="#ffffff" />
               <Text style={styles.saveButtonText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
@@ -224,19 +233,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666666',
+  },
   header: {
-    alignItems: 'center',
     padding: 24,
     backgroundColor: '#f8f8f8',
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#1a237e',
-    justifyContent: 'center',
+  profileHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+  },
+  profileIcon: {
+    marginRight: 16,
+  },
+  userInfo: {
+    flex: 1,
   },
   userName: {
     fontSize: 24,
@@ -247,15 +261,25 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 16,
     color: '#666666',
+    marginBottom: 4,
+  },
+  memberSince: {
+    fontSize: 14,
+    color: '#999999',
   },
   section: {
-    padding: 16,
+    padding: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1a237e',
-    marginBottom: 16,
   },
   emptyState: {
     alignItems: 'center',
@@ -313,7 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   actions: {
-    padding: 16,
+    padding: 20,
     gap: 12,
   },
   editButton: {
@@ -362,14 +386,15 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    gap: 8,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1a237e',
+    flex: 1,
   },
   modalLabel: {
     fontSize: 16,
@@ -386,10 +411,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: '#1a237e',
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
   },
   saveButtonText: {
     color: '#ffffff',

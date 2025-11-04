@@ -1,39 +1,48 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../firebaseConfig';
+import MessageAlert from '../components/MessageAlert';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [alert, setAlert] = useState({ visible: false, type: '', title: '', message: '' });
   const navigation = useNavigation();
+
+  const showMessage = (type, title, message) => {
+    setAlert({ visible: true, type, title, message });
+  };
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showMessage('warning', 'Missing Information', 'Please fill in both email and password fields.');
       return;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showMessage('warning', 'Invalid Email', 'Please enter a valid email address (e.g., name@example.com).');
       return;
     }
 
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      showMessage('success', 'Welcome Back!', 'You have successfully signed in to your account.');
     } catch (error) {
-      let errorMessage = 'Sign in failed. Please try again.';
+      let errorMessage = 'Unable to sign in. Please check your connection and try again.';
       if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password.';
+        errorMessage = 'The email or password you entered is incorrect. Please try again.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
+        errorMessage = 'Too many failed attempts. Please wait a few minutes and try again.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
       }
-      Alert.alert('Sign In Failed', errorMessage);
+      showMessage('error', 'Sign In Failed', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -41,20 +50,26 @@ export default function SignInScreen() {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address first');
+      showMessage('info', 'Email Required', 'Please enter your email address first to reset your password.');
       return;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showMessage('warning', 'Invalid Email', 'Please enter a valid email address to reset your password.');
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, email);
-      Alert.alert('Success', 'Password reset email sent! Check your inbox.');
+      showMessage('success', 'Check Your Email', `Password reset instructions have been sent to ${email}. Please check your inbox and spam folder.`);
     } catch (error) {
-      Alert.alert('Error', error.message);
+      let errorMessage = 'Unable to send reset email. Please try again.';
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address. Please check the email and try again.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'The email address is not valid. Please enter a valid email address.';
+      }
+      showMessage('error', 'Reset Failed', errorMessage);
     }
   };
 
@@ -66,9 +81,13 @@ export default function SignInScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="business" size={50} color="#1a237e" />
-        <Text style={styles.title}>Hotel Booking</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
+        <Image
+          source={require('../assets/Materials/LOGO/120x120.png')}
+          style={{ width: 80, height: 80 }}
+          resizeMode="contain"
+        />
+        <Text style={styles.title}>Welcome to Hotel Booking</Text>
+        <Text style={styles.subtitle}>Sign in to access your account</Text>
       </View>
 
       <View style={styles.form}>
@@ -76,7 +95,7 @@ export default function SignInScreen() {
           <Ionicons name="mail-outline" size={20} color="#666666" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Enter your email"
             placeholderTextColor="#999999"
             value={email}
             onChangeText={setEmail}
@@ -89,7 +108,7 @@ export default function SignInScreen() {
           <Ionicons name="lock-closed-outline" size={20} color="#666666" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="Enter your password"
             placeholderTextColor="#999999"
             value={password}
             onChangeText={setPassword}
@@ -105,7 +124,7 @@ export default function SignInScreen() {
         </View>
 
         <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -128,10 +147,18 @@ export default function SignInScreen() {
           onPress={() => navigation.navigate('SignUp')}
         >
           <Text style={styles.signUpText}>
-            Don't have an account? <Text style={styles.signUpBold}>Sign Up</Text>
+            New to our app? <Text style={styles.signUpBold}>Create an Account</Text>
           </Text>
         </TouchableOpacity>
       </View>
+
+      <MessageAlert
+        visible={alert.visible}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, visible: false })}
+      />
     </ScrollView>
   );
 }
@@ -148,7 +175,7 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginTop: 20,

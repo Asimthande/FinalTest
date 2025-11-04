@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 
 import ExploreScreen from '../screens/ExploreScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -62,16 +63,29 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+          // Use provided assets for tab icons
+          const icons = {
+            Explore: require('../assets/Materials/06-Explore Page/search.png'),
+            Deals: require('../assets/Materials/06-Explore Page/Systems _ heart-fill.png'),
+            Profile: require('../assets/Materials/06-Explore Page/profile-1 copy.png'),
+          };
 
-          if (route.name === 'Explore') {
-            iconName = focused ? 'search' : 'search-outline';
-          } else if (route.name === 'Deals') {
-            iconName = focused ? 'flash' : 'flash-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+          const source = icons[route.name];
+          if (source) {
+            return (
+              <Image
+                source={source}
+                style={{ width: size, height: size, tintColor: color }}
+                resizeMode="contain"
+              />
+            );
           }
 
+          // Fallback to vector icon if no image found
+          let iconName;
+          if (route.name === 'Explore') iconName = focused ? 'search' : 'search-outline';
+          else if (route.name === 'Deals') iconName = focused ? 'flash' : 'flash-outline';
+          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1a237e',

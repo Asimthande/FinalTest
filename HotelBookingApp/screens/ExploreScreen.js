@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
+const { width } = Dimensions.get('window');
+
+// Use images from assets/Materials/06-Explore Page for the sample hotels
 const hotelsData = [
   {
     id: '1',
@@ -10,8 +13,8 @@ const hotelsData = [
     location: 'Cape Town, South Africa',
     rating: 4.8,
     price: 250,
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
-    description: 'Luxury beachfront hotel with stunning ocean views'
+    image: require('../assets/Materials/06-Explore Page/image-1.png'),
+    description: 'Luxury beachfront hotel with stunning ocean views and premium amenities'
   },
   {
     id: '2',
@@ -19,8 +22,8 @@ const hotelsData = [
     location: 'Drakensberg, South Africa',
     rating: 4.6,
     price: 180,
-    image: 'https://images.unsplash.com/photo-1586375300773-8384e3e4916f?w=400',
-    description: 'Peaceful mountain getaway with spa facilities'
+    image: require('../assets/Materials/06-Explore Page/image-13.png'),
+    description: 'Peaceful mountain getaway with spa facilities and nature trails'
   },
   {
     id: '3',
@@ -28,8 +31,8 @@ const hotelsData = [
     location: 'Johannesburg, South Africa',
     rating: 4.3,
     price: 120,
-    image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400',
-    description: 'Modern suites in the heart of the city'
+    image: require('../assets/Materials/06-Explore Page/image-14.png'),
+    description: 'Modern suites in the heart of the city with business facilities'
   },
 ];
 
@@ -54,16 +57,35 @@ export default function ExploreScreen() {
       style={styles.hotelCard}
       onPress={() => navigation.navigate('HotelDetails', { hotel: item })}
     >
-      <Image source={{ uri: item.image }} style={styles.hotelImage} />
+      <View style={styles.imageContainer}>
+        <Image 
+          source={item.image} 
+          style={styles.hotelImage}
+          resizeMode="cover"
+        />
+        <View style={styles.ratingBadge}>
+          <Ionicons name="star" size={12} color="#FFFFFF" />
+          <Text style={styles.ratingBadgeText}>{item.rating}</Text>
+        </View>
+      </View>
       <View style={styles.hotelInfo}>
         <Text style={styles.hotelName}>{item.name}</Text>
         <View style={styles.locationContainer}>
           <Ionicons name="location-outline" size={16} color="#666666" />
           <Text style={styles.hotelLocation}>{item.location}</Text>
         </View>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFA000" />
-          <Text style={styles.rating}>{item.rating}</Text>
+        <View style={styles.amenitiesContainer}>
+          <View style={styles.amenityTag}>
+            <Ionicons name="wifi" size={12} color="#1a237e" />
+            <Text style={styles.amenityText}>Free WiFi</Text>
+          </View>
+          <View style={styles.amenityTag}>
+            <Ionicons name="restaurant" size={12} color="#1a237e" />
+            <Text style={styles.amenityText}>Restaurant</Text>
+          </View>
+          <View style={styles.amenityTag}>
+            <Text style={styles.amenityText}>Pool</Text>
+          </View>
         </View>
         <View style={styles.priceContainer}>
           <Text style={styles.price}>R{item.price}</Text>
@@ -75,13 +97,28 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.container}>
+      {/* HEADER WITH EXPLORE ICON */}
       <View style={styles.header}>
-        <Text style={styles.title}>Find Your Perfect Stay</Text>
+        <View style={styles.headerTitleContainer}>
+          <Ionicons name="search" size={28} color="#1a237e" style={styles.exploreIcon} />
+          <View>
+            <Text style={styles.title}>Find Your Perfect Stay</Text>
+            <Text style={styles.subtitle}>Discover amazing hotels for your next adventure</Text>
+          </View>
+        </View>
+        
         <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Sort by:</Text>
           <TouchableOpacity 
             style={[styles.filterButton, sortBy === 'price' && styles.filterButtonActive]}
             onPress={() => sortHotels('price')}
           >
+            <Ionicons 
+              name="pricetag" 
+              size={14} 
+              color={sortBy === 'price' ? '#ffffff' : '#666666'} 
+              style={styles.filterIcon}
+            />
             <Text style={[styles.filterText, sortBy === 'price' && styles.filterTextActive]}>
               Price
             </Text>
@@ -90,6 +127,12 @@ export default function ExploreScreen() {
             style={[styles.filterButton, sortBy === 'rating' && styles.filterButtonActive]}
             onPress={() => sortHotels('rating')}
           >
+            <Ionicons 
+              name="star" 
+              size={14} 
+              color={sortBy === 'rating' ? '#ffffff' : '#666666'} 
+              style={styles.filterIcon}
+            />
             <Text style={[styles.filterText, sortBy === 'rating' && styles.filterTextActive]}>
               Rating
             </Text>
@@ -118,28 +161,57 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  exploreIcon: {
+    marginRight: 12,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#1a237e',
-    marginBottom: 16,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666666',
   },
   filterContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
+  filterLabel: {
+    fontSize: 14,
+    color: '#666666',
+    marginRight: 8,
+    fontWeight: '500',
+  },
   filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f5f5f5',
+    paddingVertical: 10,
+    backgroundColor: '#f8f8f8',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    gap: 6,
   },
   filterButtonActive: {
     backgroundColor: '#1a237e',
+    borderColor: '#1a237e',
+  },
+  filterIcon: {
+    marginRight: 4,
   },
   filterText: {
     color: '#666666',
     fontWeight: '500',
+    fontSize: 14,
   },
   filterTextActive: {
     color: '#ffffff',
@@ -149,25 +221,46 @@ const styles = StyleSheet.create({
   },
   hotelCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: 16,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  imageContainer: {
+    position: 'relative',
   },
   hotelImage: {
     width: '100%',
-    height: 200,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    height: 220,
+    backgroundColor: '#f5f5f5',
+  },
+  ratingBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  ratingBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 2,
   },
   hotelInfo: {
-    padding: 16,
+    padding: 20,
   },
   hotelName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#000000',
     marginBottom: 8,
@@ -175,21 +268,31 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   hotelLocation: {
     color: '#666666',
-    marginLeft: 4,
+    marginLeft: 6,
     fontSize: 14,
   },
-  ratingContainer: {
+  amenitiesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  amenityTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
   },
-  rating: {
-    color: '#000000',
-    marginLeft: 4,
+  amenityText: {
+    fontSize: 11,
+    color: '#666666',
     fontWeight: '500',
   },
   priceContainer: {
@@ -197,12 +300,13 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   price: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#1a237e',
   },
   night: {
     color: '#666666',
+    fontSize: 14,
     marginLeft: 4,
   },
 });
