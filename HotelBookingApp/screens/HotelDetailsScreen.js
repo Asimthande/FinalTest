@@ -13,14 +13,14 @@ export default function HotelDetailsScreen() {
   const [reviews, setReviews] = useState([
     {
       id: '1',
-      userName: 'John Smith',
+      userName: 'Martin Khoza',
       rating: 5,
       comment: 'Excellent service and beautiful location! Will definitely come back.',
       date: '2024-01-15',
     },
     {
       id: '2',
-      userName: 'Sarah Johnson',
+      userName: 'Mahelehele Omphulusa',
       rating: 4,
       comment: 'Great hotel with amazing breakfast. Staff was very helpful.',
       date: '2024-01-10',
@@ -160,7 +160,7 @@ export default function HotelDetailsScreen() {
                 <View key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewRow}>
                     <ImageBackground
-                      source={require('../assets/Materials/09-Account Page/Ellipse 33.png')}
+                      source={require('../assets/Materials/09-Account Page/profile-1 copy.png')}
                       style={styles.avatarBg}
                     >
                       <Image
