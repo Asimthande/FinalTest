@@ -182,7 +182,16 @@ export default function HotelDetailsScreen() {
               <Text style={styles.sectionTitle}>Guest Reviews</Text>
               <TouchableOpacity 
                 style={styles.addReviewButton}
-                onPress={() => setShowReviewModal(true)}
+                onPress={() => {
+                  if (!auth.currentUser) {
+                    Alert.alert('Sign In Required', 'Please sign in to add a review', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Sign In', onPress: () => navigation.navigate('SignIn') }
+                    ]);
+                    return;
+                  }
+                  setShowReviewModal(true);
+                }}
               >
                 <Ionicons name="add" size={20} color="#1a237e" />
                 <Text style={styles.addReviewText}>Add Review</Text>
