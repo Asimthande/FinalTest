@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput, Image } from 'react-native';
 import { signOut, updateProfile } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { auth, db } from '../firebaseConfig';
-import { doc, getDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState(null);
@@ -11,6 +11,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState('');
+  const [cancellingBooking, setCancellingBooking] = useState(null);
 
   useEffect(() => {
     fetchUserData();
@@ -72,6 +73,39 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleCancelBooking = async (bookingId, hotelName) => {
+    Alert.alert(
+      'Cancel Booking',
+      `Are you sure you want to cancel your booking at ${hotelName}?`,
+      [
+        { text: 'Keep Booking', style: 'cancel' },
+        { 
+          text: 'Cancel Booking', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setCancellingBooking(bookingId);
+              const currentUser = auth.currentUser;
+              
+              // Delete booking from Firestore
+              await deleteDoc(doc(db, 'users', currentUser.uid, 'bookings', bookingId));
+              
+              // Update local state
+              setBookings(prev => prev.filter(booking => booking.id !== bookingId));
+              
+              Alert.alert('Success', 'Booking cancelled successfully');
+            } catch (error) {
+              console.error('Error cancelling booking:', error);
+              Alert.alert('Error', 'Failed to cancel booking. Please try again.');
+            } finally {
+              setCancellingBooking(null);
+            }
+          }
+        },
+      ]
+    );
+  };
+
   const handleLogout = async () => {
     Alert.alert(
       'Logout',
@@ -102,6 +136,28 @@ export default function ProfileScreen() {
     });
   };
 
+  const isBookingUpcoming = (checkInDate) => {
+    const today = new Date();
+    const checkIn = new Date(checkInDate);
+    return checkIn > today;
+  };
+
+  const getBookingStatus = (booking) => {
+    const today = new Date();
+    const checkIn = new Date(booking.checkIn);
+    const checkOut = new Date(booking.checkOut);
+
+    if (booking.cancelled) {
+      return { status: 'Cancelled', color: '#f44336', bgColor: '#ffebee' };
+    } else if (today > checkOut) {
+      return { status: 'Completed', color: '#666666', bgColor: '#f5f5f5' };
+    } else if (today >= checkIn && today <= checkOut) {
+      return { status: 'Active', color: '#2196F3', bgColor: '#e3f2fd' };
+    } else {
+      return { status: 'Confirmed', color: '#4CAF50', bgColor: '#E8F5E8' };
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -116,7 +172,11 @@ export default function ProfileScreen() {
       {/* HEADER WITH PROFILE ICON */}
       <View style={styles.header}>
         <View style={styles.profileHeader}>
-          <Ionicons name="person-circle" size={80} color="#1a237e" style={styles.profileIcon} />
+          <Image
+            source={require('../assets/Materials/09-Account Page/profile-1 copy.png')}
+            style={styles.profileImage}
+            resizeMode="cover"
+          />
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
@@ -138,36 +198,69 @@ export default function ProfileScreen() {
             <Text style={styles.emptyStateSubtext}>Your upcoming stays will appear here</Text>
           </View>
         ) : (
-          bookings.map(booking => (
-            <View key={booking.id} style={styles.bookingCard}>
-              <View style={styles.bookingHeader}>
-                <Text style={styles.hotelName}>{booking.hotelName}</Text>
-                <Text style={styles.bookingStatus}>Confirmed</Text>
+          bookings.map(booking => {
+            const statusInfo = getBookingStatus(booking);
+            const isUpcoming = isBookingUpcoming(booking.checkIn);
+            
+            return (
+              <View key={booking.id} style={[
+                styles.bookingCard,
+                statusInfo.status === 'Cancelled' && styles.cancelledBookingCard
+              ]}>
+                <View style={styles.bookingHeader}>
+                  <Text style={styles.hotelName}>{booking.hotelName}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+                    <Text style={[styles.bookingStatus, { color: statusInfo.color }]}>
+                      {statusInfo.status}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.bookingDetails}>
+                  <View style={styles.bookingDetail}>
+                    <Ionicons name="calendar-outline" size={16} color="#666666" />
+                    <Text style={styles.bookingText}>
+                      {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
+                    </Text>
+                  </View>
+                  <View style={styles.bookingDetail}>
+                    <Ionicons name="people-outline" size={16} color="#666666" />
+                    <Text style={styles.bookingText}>
+                      {booking.guests} guests • {booking.rooms} room(s)
+                    </Text>
+                  </View>
+                  <View style={styles.bookingDetail}>
+                    <Ionicons name="cash-outline" size={16} color="#666666" />
+                    <Text style={styles.bookingText}>R{booking.totalPrice}</Text>
+                  </View>
+                  <View style={styles.bookingDetail}>
+                    <Ionicons name="moon-outline" size={16} color="#666666" />
+                    <Text style={styles.bookingText}>{booking.totalNights} nights</Text>
+                  </View>
+                </View>
+                
+                {/* Cancel Button for upcoming bookings */}
+                {isUpcoming && statusInfo.status === 'Confirmed' && (
+                  <TouchableOpacity 
+                    style={[
+                      styles.cancelButton,
+                      cancellingBooking === booking.id && styles.cancelButtonDisabled
+                    ]}
+                    onPress={() => handleCancelBooking(booking.id, booking.hotelName)}
+                    disabled={cancellingBooking === booking.id}
+                  >
+                    <Ionicons 
+                      name={cancellingBooking === booking.id ? "hourglass-outline" : "close-circle-outline"} 
+                      size={16} 
+                      color="#d32f2f" 
+                    />
+                    <Text style={styles.cancelButtonText}>
+                      {cancellingBooking === booking.id ? 'Cancelling...' : 'Cancel Booking'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              <View style={styles.bookingDetails}>
-                <View style={styles.bookingDetail}>
-                  <Ionicons name="calendar-outline" size={16} color="#666666" />
-                  <Text style={styles.bookingText}>
-                    {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
-                  </Text>
-                </View>
-                <View style={styles.bookingDetail}>
-                  <Ionicons name="people-outline" size={16} color="#666666" />
-                  <Text style={styles.bookingText}>
-                    {booking.guests} guests • {booking.rooms} room(s)
-                  </Text>
-                </View>
-                <View style={styles.bookingDetail}>
-                  <Ionicons name="cash-outline" size={16} color="#666666" />
-                  <Text style={styles.bookingText}>R{booking.totalPrice}</Text>
-                </View>
-                <View style={styles.bookingDetail}>
-                  <Ionicons name="moon-outline" size={16} color="#666666" />
-                  <Text style={styles.bookingText}>{booking.totalNights} nights</Text>
-                </View>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
 
@@ -249,6 +342,12 @@ const styles = StyleSheet.create({
   profileIcon: {
     marginRight: 16,
   },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 16,
+  },
   userInfo: {
     flex: 1,
   },
@@ -304,6 +403,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+  cancelledBookingCard: {
+    backgroundColor: '#fafafa',
+    borderColor: '#ffcdd2',
+    opacity: 0.7,
+  },
   bookingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -314,18 +418,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#000000',
+    flex: 1,
+    marginRight: 8,
   },
-  bookingStatus: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '500',
-    backgroundColor: '#E8F5E8',
+  statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
+  bookingStatus: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
   bookingDetails: {
     gap: 8,
+    marginBottom: 12,
   },
   bookingDetail: {
     flexDirection: 'row',
@@ -335,6 +442,25 @@ const styles = StyleSheet.create({
   bookingText: {
     color: '#666666',
     fontSize: 14,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffcdd2',
+  },
+  cancelButtonDisabled: {
+    opacity: 0.6,
+  },
+  cancelButtonText: {
+    color: '#d32f2f',
+    fontSize: 14,
+    fontWeight: '500',
   },
   actions: {
     padding: 20,

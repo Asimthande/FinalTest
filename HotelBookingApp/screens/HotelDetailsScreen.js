@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, Alert, Modal, TextInput } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { auth, db } from '../firebaseConfig';
@@ -158,12 +158,27 @@ export default function HotelDetailsScreen() {
             ) : (
               reviews.map(review => (
                 <View key={review.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewerName}>{review.userName}</Text>
-                    {renderStars(review.rating)}
+                  <View style={styles.reviewRow}>
+                    <ImageBackground
+                      source={require('../assets/Materials/09-Account Page/Ellipse 33.png')}
+                      style={styles.avatarBg}
+                    >
+                      <Image
+                        source={require('../assets/Materials/09-Account Page/profile-1 copy.png')}
+                        style={styles.reviewAvatar}
+                        resizeMode="cover"
+                      />
+                    </ImageBackground>
+
+                    <View style={styles.reviewBody}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewerName}>{review.userName}</Text>
+                        {renderStars(review.rating)}
+                      </View>
+                      <Text style={styles.reviewComment}>{review.comment}</Text>
+                      <Text style={styles.reviewDate}>{review.date}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.reviewComment}>{review.comment}</Text>
-                  <Text style={styles.reviewDate}>{review.date}</Text>
                 </View>
               ))
             )}
@@ -348,6 +363,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+  },
+  reviewRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  avatarBg: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  reviewAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  reviewBody: {
+    flex: 1,
   },
   reviewHeader: {
     flexDirection: 'row',
