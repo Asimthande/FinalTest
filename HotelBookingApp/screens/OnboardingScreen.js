@@ -35,13 +35,13 @@ export default function OnboardingScreen() {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // FIXED: Navigate to SignIn instead of SignUp
+      // CORRECT: Navigate to SignIn screen
       navigation.replace('SignIn');
     }
   };
 
   const handleSkip = () => {
-    // FIXED: Navigate to SignIn instead of SignUp
+    // CORRECT: Navigate to SignIn screen
     navigation.replace('SignIn');
   };
 
