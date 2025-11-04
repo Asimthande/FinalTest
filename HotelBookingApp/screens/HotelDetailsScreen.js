@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackg
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { auth, db } from '../firebaseConfig';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 
 export default function HotelDetailsScreen() {
   const navigation = useNavigation();
@@ -29,6 +29,8 @@ export default function HotelDetailsScreen() {
   
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
 
   const handleBookNow = () => {
     if (!auth.currentUser) {
@@ -45,35 +47,51 @@ export default function HotelDetailsScreen() {
     navigation.navigate('Booking', { hotel });
   };
 
-  const handleAddReview = async () => {
+  const handleSubmitReview = async () => {
     if (!newReview.comment.trim()) {
       Alert.alert('Error', 'Please write a review comment');
       return;
     }
 
-    const review = {
-      id: Date.now().toString(),
+    const baseReview = {
       userName: auth.currentUser?.displayName || 'Anonymous',
       rating: newReview.rating,
       comment: newReview.comment,
       date: new Date().toISOString().split('T')[0],
     };
 
-    // Save to Firebase
     try {
-      await addDoc(collection(db, 'hotels', hotel.id, 'reviews'), {
-        ...review,
-        userId: auth.currentUser.uid,
-        createdAt: serverTimestamp(),
-      });
+      if (isEditing && editingReviewId) {
+        // Update existing review in Firestore
+        await updateDoc(doc(db, 'hotels', hotel.id, 'reviews', editingReviewId), {
+          ...baseReview,
+          updatedAt: serverTimestamp(),
+        });
+
+        // Update local state
+        setReviews(prev => prev.map(r => r.id === editingReviewId ? { ...r, ...baseReview } : r));
+        Alert.alert('Success', 'Your review was updated');
+      } else {
+        // Add new review to Firestore and use the returned doc id
+        const docRef = await addDoc(collection(db, 'hotels', hotel.id, 'reviews'), {
+          ...baseReview,
+          userId: auth.currentUser?.uid || null,
+          createdAt: serverTimestamp(),
+        });
+
+        const reviewWithId = { id: docRef.id, ...baseReview };
+        setReviews([reviewWithId, ...reviews]);
+        Alert.alert('Success', 'Thank you for your review!');
+      }
     } catch (error) {
-      console.error('Error saving review:', error);
+      console.error('Error saving/updating review:', error);
+      Alert.alert('Error', 'Failed to save review. Please try again.');
     }
 
-    setReviews([review, ...reviews]);
     setNewReview({ rating: 5, comment: '' });
     setShowReviewModal(false);
-    Alert.alert('Success', 'Thank you for your review!');
+    setIsEditing(false);
+    setEditingReviewId(null);
   };
 
   const renderStars = (rating, size = 16, interactive = false, onPress = null) => {
@@ -90,6 +108,24 @@ export default function HotelDetailsScreen() {
         ))}
       </View>
     );
+  };
+
+  const handleEditPress = (review) => {
+    // Only allow editing by the review owner
+    if (!auth.currentUser) {
+      Alert.alert('Sign In Required', 'Please sign in to edit your review');
+      return;
+    }
+
+    if (review.userId && review.userId !== auth.currentUser.uid) {
+      Alert.alert('Permission denied', 'You can only edit your own reviews');
+      return;
+    }
+
+    setNewReview({ rating: review.rating, comment: review.comment });
+    setIsEditing(true);
+    setEditingReviewId(review.id);
+    setShowReviewModal(true);
   };
 
   return (
@@ -160,7 +196,7 @@ export default function HotelDetailsScreen() {
                 <View key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewRow}>
                     <ImageBackground
-                      source={require('../assets/Materials/09-Account Page/profile-1 copy.png')}
+                      source={require('../assets/Materials/09-Account Page/Ellipse 33.png')}
                       style={styles.avatarBg}
                     >
                       <Image
@@ -171,12 +207,21 @@ export default function HotelDetailsScreen() {
                     </ImageBackground>
 
                     <View style={styles.reviewBody}>
-                      <View style={styles.reviewHeader}>
-                        <Text style={styles.reviewerName}>{review.userName}</Text>
-                        {renderStars(review.rating)}
+                      <View style={styles.reviewHeaderRow}>
+                        <View style={styles.reviewHeaderLeft}>
+                          <Text style={styles.reviewerName}>{review.userName}</Text>
+                          <Text style={styles.reviewDate}>{review.date}</Text>
+                        </View>
+                        <View style={styles.reviewHeaderRight}>
+                          {renderStars(review.rating)}
+                          {auth.currentUser && review.userId === auth.currentUser.uid && (
+                            <TouchableOpacity onPress={() => handleEditPress(review)} style={styles.editReviewButton}>
+                              <Ionicons name="create-outline" size={18} color="#1a237e" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       </View>
                       <Text style={styles.reviewComment}>{review.comment}</Text>
-                      <Text style={styles.reviewDate}>{review.date}</Text>
                     </View>
                   </View>
                 </View>
@@ -203,8 +248,8 @@ export default function HotelDetailsScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Your Review</Text>
-              <TouchableOpacity onPress={() => setShowReviewModal(false)}>
+              <Text style={styles.modalTitle}>{isEditing ? 'Edit Your Review' : 'Add Your Review'}</Text>
+              <TouchableOpacity onPress={() => { setShowReviewModal(false); setIsEditing(false); setEditingReviewId(null); }}>
                 <Ionicons name="close" size={24} color="#666666" />
               </TouchableOpacity>
             </View>
@@ -224,8 +269,8 @@ export default function HotelDetailsScreen() {
               onChangeText={(text) => setNewReview({...newReview, comment: text})}
             />
             
-            <TouchableOpacity style={styles.submitReviewButton} onPress={handleAddReview}>
-              <Text style={styles.submitReviewText}>Submit Review</Text>
+            <TouchableOpacity style={styles.submitReviewButton} onPress={handleSubmitReview}>
+              <Text style={styles.submitReviewText}>{isEditing ? 'Update Review' : 'Submit Review'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -385,10 +430,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reviewHeader: {
+    // old header style for simple layout
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  reviewHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  reviewHeaderLeft: {
+    flexDirection: 'column',
+  },
+  reviewHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editReviewButton: {
+    marginLeft: 8,
   },
   reviewerName: {
     fontWeight: 'bold',

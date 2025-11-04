@@ -93,8 +93,8 @@ export default function BookingScreen() {
       await addDoc(collection(db, 'users', auth.currentUser.uid, 'bookings'), booking);
 
       Alert.alert(
-        'Booking Confirmed!',
-        `Your booking at ${hotel.name} has been confirmed.\n\nTotal: R${totalPrice}`,
+        'Successfully Booked!',
+        `You have successfully booked ${hotel.name}.\n\nTotal: R${totalPrice}`,
         [
           { 
             text: 'View Bookings', 
